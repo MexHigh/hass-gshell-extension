@@ -13,8 +13,6 @@ const _ = Gettext.gettext;
 
 const HASS_ACCESS_TOKEN = 'hass-access-token';
 const HASS_URL = 'hass-url';
-const HASS_TOGGLABLE_ENTITIES = 'hass-togglable-entities';
-const HASS_ENABLED_ENTITIES = 'hass-enabled-entities';
 // const HASS_SHORTCUT = 'hass-shortcut';
 const SHOW_NOTIFICATIONS_KEY = 'show-notifications';
 const SHOW_WEATHER_STATS = 'show-weather-stats';
@@ -53,11 +51,11 @@ function buildPrefsWidget() {
     // notebook.append_page(_buildTogglables(), togglables);
     notebook.append_page(_buildTogglableSettings(), togglables);
 
+    let runnables = new Gtk.Label({label: "Runnables", halign: Gtk.Align.START});
+    notebook.append_page(_buildRunnableSettings(), runnables);
+
     let panelSensors = new Gtk.Label({ label: _('Panel Sensors'), halign: Gtk.Align.START});
     notebook.append_page(_buildSensorSettings(), panelSensors);
-
-    let scenes = new Gtk.Label({label: "Scenes", halign: Gtk.Align.START});
-    notebook.append_page(_buildSceneSettings(), scenes);
 
     return prefsWidget;
 }
@@ -526,7 +524,7 @@ function _buildSensorSettings() {
     return scrollWindow;
 }
 
-function _buildSceneSettings() {
+function _buildRunnableSettings() {
     const mscOptions = new Settings.MscOptions();
 
     const scrollWindow = new Gtk.ScrolledWindow();
@@ -556,9 +554,9 @@ function _buildSceneSettings() {
     // //////////////////////////////////////////////////////////
     // /////////// Which switches should be togglable ///////////
     // //////////////////////////////////////////////////////////
-    let togglables = mscOptions.sceneEntities;
-    let enabledEntities = mscOptions.enabledSceneEntities;
-    if (togglables.length === 0) {
+    let runnables = mscOptions.runnableEntities;
+    let enabledRunnables = mscOptions.enabledRunnableEntities;
+    if (runnables.length === 0) {
         optionsList.push(_optionsItem(
             _makeTitle(_('Togglable Entities:')), null, null, null
         ));
@@ -569,19 +567,19 @@ function _buildSceneSettings() {
         ));
     }
 
-    // Add the togglable check boxes option
-    let togglableCheckBoxes = [];
-    for (let tog of togglables) {
+    // Add the runnable check boxes option
+    let runnableCheckBoxes = [];
+    for (let run of runnables) {
         let checked = false;
-        if (enabledEntities.includes(tog.entity_id)) checked = true;
-        let [togglableItem, togglableCheckBox] = _makeCheckBox(
-            "%s (%s)".format(tog.name, tog.entity_id),
+        if (enabledRunnables.includes(run.entity_id)) checked = true;
+        let [runnableItem, runnableCheckBox] = _makeCheckBox(
+            "%s (%s)".format(run.name, run.entity_id),
             checked
         );
-        optionsList.push(togglableItem);
-        togglableCheckBoxes.push({
-            entity: tog,
-            cb: togglableCheckBox,
+        optionsList.push(runnableItem);
+        runnableCheckBoxes.push({
+            entity: run,
+            cb: runnableCheckBox,
             checked: checked
         });
     }
@@ -637,17 +635,17 @@ function _buildSceneSettings() {
     // //////////////////////////////////////////////////////////
     // /////////////// Handlers for Checkboxes //////////////////
     // //////////////////////////////////////////////////////////
-    for (let togCheckBox of togglableCheckBoxes) {
-        togCheckBox.cb.set_active(togCheckBox.checked)
-        togCheckBox.cb.connect('notify::active', () => {
-            let currentEntities = mscOptions.enabledSceneEntities;
-            let index = currentEntities.indexOf(togCheckBox.entity);
+    for (let runCheckBox of runnableCheckBoxes) {
+        runCheckBox.cb.set_active(runCheckBox.checked)
+        runCheckBox.cb.connect('notify::active', () => {
+            let currentEntities = mscOptions.enabledRunnableEntities;
+            let index = currentEntities.indexOf(runCheckBox.entity);
             if (index > -1) { // then it exists and so we pop
                 currentEntities.splice(index, 1)
             } else {
-                currentEntities.push(togCheckBox.entity)
+                currentEntities.push(runCheckBox.entity)
             }
-            mscOptions.enabledSceneEntities = mscOptions.sceneEntities.map(
+            mscOptions.enabledRunnableEntities = mscOptions.runnableEntities.map(
                 ent => ent.entity_id
             ).filter(
                 ent => currentEntities.includes(ent)

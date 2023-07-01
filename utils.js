@@ -139,12 +139,14 @@ function discoverSensors(base_url) {
     return entities.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
 }
 
+const VALID_RUNNABLES = ['scene.', 'script.'];
+
 /**
  * 
  * @param {String} base_url The base url of the Home Assistant instance
  * @return {Object} Array of dictionaries with 'entity_id' and 'name' entries
  */
-function discoverScenes(base_url) {
+function discoverRunnables(base_url) {
     if ( !base_url || base_url === "http:///" || base_url === "https:///" ) {
         return [];
     }
@@ -155,13 +157,11 @@ function discoverScenes(base_url) {
     }
     let entities = [];
     for (let ent of data) {
-        if (ent.entity_id.startsWith('scene.')) {
-            entities.push(
-              {
+        if (VALID_RUNNABLES.filter(run => ent.entity_id.startsWith(run)).length > 0) {
+            entities.push({
                 'entity_id': ent.entity_id,
                 'name': ent.attributes.friendly_name,
-              }
-            )
+            })
         }
     }
     return entities

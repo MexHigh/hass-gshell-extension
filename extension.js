@@ -18,8 +18,8 @@ const HASS_TOGGLABLE_ENTITIES = 'hass-togglable-entities';
 const HASS_ENABLED_ENTITIES = 'hass-enabled-entities';
 const HASS_PANEL_SENSOR_IDS = 'hass-panel-sensor-ids';
 const HASS_ENABLED_SENSOR_IDS = 'hass-enabled-sensor-ids';
-const HASS_SCENE_ENTITIES = 'hass-scene-entities';
-const HASS_ENABLED_SCENES_ENTITIES = 'hass-enabled-scene-entities';
+const HASS_RUNNABLE_ENTITIES = 'hass-runnable-entities';
+const HASS_ENABLED_RUNNABLE_ENTITIES = 'hass-enabled-runnable-entities';
 const HASS_SETTINGS = 'org.gnome.shell.extensions.hass-data';
 let hassExtension;
 
@@ -91,25 +91,25 @@ var HassExtension = GObject.registerClass ({
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        // Scenes
-        var scenePmItems = [];
+        // Runnables
+        var runnablePmItems = [];
         // Get the togglable entities
-        let scenes = this._getSceneEntities();
-        for (let entity of scenes) {
+        let runnables = this._getRunnableEntities();
+        for (let entity of runnables) {
             if (entity.entity_id === "" || !entity.entity_id.includes("."))
                 continue
-            let scenePmItem = new PopupMenu.PopupMenuItem(_('Toggle:'));
-            scenePmItem.add_child(
+            let runnablePmItem = new PopupMenu.PopupMenuItem(_('Toggle:'));
+            runnablePmItem.add_child(
                 new St.Label({
                     text : entity.name
                 })
             );
-            this.menu.addMenuItem(scenePmItem);
-            scenePmItems.push({item: scenePmItem, entity: entity.entity_id});
+            this.menu.addMenuItem(runnablePmItem);
+            runnablePmItems.push({item: runnablePmItem, entity: entity.entity_id});
         }
-        for (let item of scenePmItems) {
+        for (let item of runnablePmItems) {
             item.item.connect('activate', () => {
-                this._activateScene(item.entity)
+                this._turnOnRunnable(item.entity)
             });
         }
 
@@ -240,10 +240,10 @@ var HassExtension = GObject.registerClass ({
             trayNeedsRebuild = true;
         }
 
-        // Check scene ids
-        tmp = this.scene_ent_ids;
-        this.scene_ent_ids = this._settings.get_strv(HASS_ENABLED_SCENES_ENTITIES);
-        if (!Utils.arraysEqual(tmp, this.scene_ent_ids)) {
+        // Check runnable ids
+        tmp = this.runnable_ent_ids;
+        this.runnable_ent_ids = this._settings.get_strv(HASS_ENABLED_RUNNABLE_ENTITIES);
+        if (!Utils.arraysEqual(tmp, this.runnable_ent_ids)) {
             trayNeedsRebuild = true;
         }
 
@@ -315,26 +315,26 @@ var HassExtension = GObject.registerClass ({
      * 
      * @return {Array} An array of objects with keys: 'entity_id' and 'name' to be used when rebuilding the tray entries.
      */
-    _getSceneEntities() {
+    _getRunnableEntities() {
         // Initialize the switched if this is the first time the function is being called
-        if (this.allScenes === undefined) {
-            this.allScenes = Utils.discoverScenes(this.base_url);
-            this._settings.set_strv(HASS_SCENE_ENTITIES, this.allScenes.map(entry => JSON.stringify(entry)))
+        if (this.allRunnables === undefined) {
+            this.allRunnables = Utils.discoverRunnables(this.base_url);
+            this._settings.set_strv(HASS_RUNNABLE_ENTITIES, this.allRunnables.map(entry => JSON.stringify(entry)))
         }
-        if (this.scene_ent_ids === undefined) {  // || this.scene_ent_ids.length === 0) {
+        if (this.runnable_ent_ids === undefined) {  // || this.runnable_ent_ids.length === 0) {
             // If the togglable entities provided by the user are empty then simply use all of the available entities
             // and also update the settings
-            this._settings.set_strv(HASS_ENABLED_SCENES_ENTITIES, this.allScenes.map(entry => entry.entity_id))
-            return this.allScenes
+            this._settings.set_strv(HASS_ENABLED_RUNNABLE_ENTITIES, this.allRunnables.map(entry => entry.entity_id))
+            return this.allRunnables
         } else {
             let output = [];
             // Only return the entities that appear in the user defined entities
-            for (let scene of this.allScenes) {
-                if (this.scene_ent_ids.includes(scene.entity_id)) {
-                    output.push(scene);
+            for (let runnable of this.allRunnables) {
+                if (this.runnable_ent_ids.includes(runnable.entity_id)) {
+                    output.push(runnable);
                 }
             }
-            this._settings.set_strv(HASS_ENABLED_SCENES_ENTITIES, output.map(entry => entry.entity_id));
+            this._settings.set_strv(HASS_ENABLED_RUNNABLE_ENTITIES, output.map(entry => entry.entity_id));
             return output
         }
     }
@@ -349,7 +349,7 @@ var HassExtension = GObject.registerClass ({
         return true;
     }
 
-    _activateScene(entityId) {
+    _turnOnRunnable(entityId) {
         let data = { "entity_id": entityId };
         let domain = entityId.split(".")[0];  // e.g. scene.myscene => scene
         let result = Utils.send_request(`${this.base_url}api/services/${domain}/turn_on`, 'POST', data);

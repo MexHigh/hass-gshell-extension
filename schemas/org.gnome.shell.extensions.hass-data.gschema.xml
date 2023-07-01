@@ -101,16 +101,16 @@
       <description>Entity ids for home-assistant sensors. E.g. sensor.livingroom_temperature .</description>
     </key>
 
-    <key type="as" name="hass-scene-entities">
+    <key type="as" name="hass-runnable-entities">
       <default>[]</default>
-      <summary>Entity ids for home-assistant scenes.</summary>
-      <description>Entity ids for home assistant scenes. E.g. scene.myscene.</description>
+      <summary>Entity ids for home-assistant scenes and scripts.</summary>
+      <description>Entity ids for home assistant scenes and scripts. E.g. scene.myscene.</description>
     </key>
 
-    <key type="as" name="hass-enabled-scene-entities">
+    <key type="as" name="hass-enabled-runnable-entities">
       <default>[]</default>
-      <summary>Entity ids for home assistant scenes displayed in the tray.</summary>
-      <description>Entity ids for home assistant scenes displayed in the tray. E.g. scene.myscene.</description>
+      <summary>Entity ids for home assistant scenes and scripts displayed in the tray.</summary>
+      <description>Entity ids for home assistant scenes and scripts displayed in the tray. E.g. scene.myscene.</description>
     </key>
 
   </schema>
