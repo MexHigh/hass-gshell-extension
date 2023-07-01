@@ -57,7 +57,7 @@ function buildPrefsWidget() {
     notebook.append_page(_buildSensorSettings(), panelSensors);
 
     let scenes = new Gtk.Label({label: "Scenes", halign: Gtk.Align.START});
-    notebook.append_page(_buildSceneSettings(), panelSensors);
+    notebook.append_page(_buildSceneSettings(), scenes);
 
     return prefsWidget;
 }

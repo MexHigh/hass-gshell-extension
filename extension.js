@@ -241,9 +241,9 @@ var HassExtension = GObject.registerClass ({
         }
 
         // Check scene ids
-        tmpScenes = this.scene_ent_ids;
+        tmp = this.scene_ent_ids;
         this.scene_ent_ids = this._settings.get_strv(HASS_ENABLED_SCENES_ENTITIES);
-        if (!Utils.arraysEqual(tmpScenes, this.scene_ent_ids)) {
+        if (!Utils.arraysEqual(tmp, this.scene_ent_ids)) {
             trayNeedsRebuild = true;
         }
 

@@ -137,10 +137,10 @@ var MscOptions = class MscOptions {
 
     // Scene entities
     get sceneEntities() {
-        return this._gsettings.get_strv(HASS_SCENE_ENTITIES);
+        return this._gsettings.get_strv(HASS_SCENE_ENTITIES).map(ent => JSON.parse(ent));
     }
     set sceneEntities(entities) {
-        this._gsettings.set_strv(HASS_SCENE_ENTITIES, entities);
+        this._gsettings.set_strv(HASS_SCENE_ENTITIES, entities.map(ent => JSON.stringify(ent)));
     }
 
     get enabledSceneEntities() {
