@@ -56,6 +56,9 @@ function buildPrefsWidget() {
     let panelSensors = new Gtk.Label({ label: _('Panel Sensors'), halign: Gtk.Align.START});
     notebook.append_page(_buildSensorSettings(), panelSensors);
 
+    let scenes = new Gtk.Label({label: "Scenes", halign: Gtk.Align.START});
+    notebook.append_page(_buildSceneSettings(), panelSensors);
+
     return prefsWidget;
 }
 
@@ -514,6 +517,140 @@ function _buildSensorSettings() {
                 ent => ent.entity_id
             ).filter(
                 ent => currentSensors.includes(ent)
+            );
+        });
+    }
+
+    scrollWindow.set_child(miscUI)
+
+    return scrollWindow;
+}
+
+function _buildSceneSettings() {
+    const mscOptions = new Settings.MscOptions();
+
+    const scrollWindow = new Gtk.ScrolledWindow();
+    let miscUI = new Gtk.Box({
+        orientation: Gtk.Orientation.VERTICAL,
+        spacing:       10,
+        homogeneous: false,
+        margin_start:  12,
+        margin_end:    12,
+        margin_top:    12,
+        margin_bottom: 12,
+        hexpand: true,
+        vexpand: true,
+    });
+    let searchEntry = new Gtk.SearchEntry({
+        halign: Gtk.Align.START,
+        valign: Gtk.Align.CENTER,
+        hexpand: true
+    });
+    if (typeof searchEntry.set_search_delay === "function") {
+        searchEntry.set_search_delay(150);
+    }
+    miscUI.append(searchEntry);
+
+    let optionsList = [];
+
+    // //////////////////////////////////////////////////////////
+    // /////////// Which switches should be togglable ///////////
+    // //////////////////////////////////////////////////////////
+    let togglables = mscOptions.sceneEntities;
+    let enabledEntities = mscOptions.enabledSceneEntities;
+    if (togglables.length === 0) {
+        optionsList.push(_optionsItem(
+            _makeTitle(_('Togglable Entities:')), null, null, null
+        ));
+    } else {
+        // Only the title changes
+        optionsList.push(_optionsItem(
+            _makeTitle(_('Choose Togglable Entities:')), null, null, null
+        ));
+    }
+
+    // Add the togglable check boxes option
+    let togglableCheckBoxes = [];
+    for (let tog of togglables) {
+        let checked = false;
+        if (enabledEntities.includes(tog.entity_id)) checked = true;
+        let [togglableItem, togglableCheckBox] = _makeCheckBox(
+            "%s (%s)".format(tog.name, tog.entity_id),
+            checked
+        );
+        optionsList.push(togglableItem);
+        togglableCheckBoxes.push({
+            entity: tog,
+            cb: togglableCheckBox,
+            checked: checked
+        });
+    }
+
+    // //////////////////////////////////////////////////////////
+    // ////////////////// Building the boxes ////////////////////
+    // //////////////////////////////////////////////////////////
+    let frame;
+    let frameBox;
+    for (let item_id in optionsList) {
+        let item = optionsList[item_id];
+        if (item[0].length === 1) {
+            let lbl = new Gtk.Label();
+            lbl.set_markup(item[0][0]);
+            frame = new Gtk.Frame({
+                label_widget: lbl
+            });
+            frameBox = new Gtk.ListBox({
+                selection_mode: null,
+                can_focus: false,
+            });
+            miscUI.append(frame);
+            frame.set_child(frameBox);
+            continue;
+        }
+        let box = new Gtk.Box({
+            can_focus: false,
+            orientation: Gtk.Orientation.HORIZONTAL,
+            margin_start: 4,
+            margin_end:   4,
+            margin_top:   4,
+            margin_bottom:4,
+            hexpand: true,
+            spacing: 30,
+        });
+        for (let i of item[0]) {
+            box.append(i)
+        }
+        if (item.length === 2) {
+            box.set_tooltip_text(item[1]);
+        }
+        frameBox.append(box);
+    }
+
+    searchEntry.connect('search-changed', () => {
+        let pattern = searchEntry.get_text().toLowerCase();
+        frameBox.set_filter_func(function(row) {
+            let label = row.child.get_last_child().get_text();
+            return label ? label.toLowerCase().includes(pattern) : true;
+        });
+    });
+
+    // //////////////////////////////////////////////////////////
+    // /////////////// Handlers for Checkboxes //////////////////
+    // //////////////////////////////////////////////////////////
+    for (let togCheckBox of togglableCheckBoxes) {
+        togCheckBox.cb.set_active(togCheckBox.checked)
+        togCheckBox.cb.connect('notify::active', () => {
+            let currentEntities = mscOptions.enabledSceneEntities;
+            let index = currentEntities.indexOf(togCheckBox.entity);
+            if (index > -1) { // then it exists and so we pop
+                currentEntities.splice(index, 1)
+            } else {
+                currentEntities.push(togCheckBox.entity)
+            }
+            mscOptions.enabledSceneEntities = mscOptions.sceneEntities.map(
+                ent => ent.entity_id
+            ).filter(
+                ent => currentEntities.includes(ent)
             );
         });
     }

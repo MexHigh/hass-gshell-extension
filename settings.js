@@ -12,6 +12,8 @@ const HASS_TOGGLABLE_ENTITIES = 'hass-togglable-entities';
 const HASS_ENABLED_ENTITIES = 'hass-enabled-entities';
 const HASS_PANEL_SENSOR_IDS = 'hass-panel-sensor-ids';
 const HASS_ENABLED_SENSOR_IDS = 'hass-enabled-sensor-ids';
+const HASS_SCENE_ENTITIES = 'hass-scene-entities';
+const HASS_ENABLED_SCENES_ENTITIES = 'hass-enabled-scene-entities';
 // const HASS_SHORTCUT = 'hass-shortcut';
 const SHOW_NOTIFICATIONS_KEY = 'show-notifications';
 const SHOW_WEATHER_STATS = 'show-weather-stats';
@@ -133,4 +135,18 @@ var MscOptions = class MscOptions {
         this._gsettings.set_strv(HASS_ENABLED_SENSOR_IDS, entities);
     }
 
+    // Scene entities
+    get sceneEntities() {
+        return this._gsettings.get_strv(HASS_SCENE_ENTITIES);
+    }
+    set sceneEntities(entities) {
+        this._gsettings.set_strv(HASS_SCENE_ENTITIES, entities);
+    }
+
+    get enabledSceneEntities() {
+        return this._gsettings.get_strv(HASS_ENABLED_SCENES_ENTITIES);
+    }
+    set enabledSceneEntities(entities) {
+        this._gsettings.set_strv(HASS_ENABLED_SCENES_ENTITIES, entities);
+    }
 }

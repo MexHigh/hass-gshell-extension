@@ -18,6 +18,8 @@ const HASS_TOGGLABLE_ENTITIES = 'hass-togglable-entities';
 const HASS_ENABLED_ENTITIES = 'hass-enabled-entities';
 const HASS_PANEL_SENSOR_IDS = 'hass-panel-sensor-ids';
 const HASS_ENABLED_SENSOR_IDS = 'hass-enabled-sensor-ids';
+const HASS_SCENE_ENTITIES = 'hass-scene-entities';
+const HASS_ENABLED_SCENES_ENTITIES = 'hass-enabled-scene-entities';
 const HASS_SETTINGS = 'org.gnome.shell.extensions.hass-data';
 let hassExtension;
 
@@ -84,6 +86,30 @@ var HassExtension = GObject.registerClass ({
         for (let item of pmItems) {
             item.item.connect('activate', () => {
                 this._toggleEntity(item.entity)
+            });
+        }
+
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        // Scenes
+        var scenePmItems = [];
+        // Get the togglable entities
+        let scenes = this._getSceneEntities();
+        for (let entity of scenes) {
+            if (entity.entity_id === "" || !entity.entity_id.includes("."))
+                continue
+            let scenePmItem = new PopupMenu.PopupMenuItem(_('Toggle:'));
+            scenePmItem.add_child(
+                new St.Label({
+                    text : entity.name
+                })
+            );
+            this.menu.addMenuItem(scenePmItem);
+            scenePmItems.push({item: scenePmItem, entity: entity.entity_id});
+        }
+        for (let item of scenePmItems) {
+            item.item.connect('activate', () => {
+                this._activateScene(item.entity)
             });
         }
 
@@ -214,6 +240,13 @@ var HassExtension = GObject.registerClass ({
             trayNeedsRebuild = true;
         }
 
+        // Check scene ids
+        tmpScenes = this.scene_ent_ids;
+        this.scene_ent_ids = this._settings.get_strv(HASS_ENABLED_SCENES_ENTITIES);
+        if (!Utils.arraysEqual(tmpScenes, this.scene_ent_ids)) {
+            trayNeedsRebuild = true;
+        }
+
         // Do the same for all of the weather entities
         trayNeedsRebuild = this._needsRebuildTempPanel(trayNeedsRebuild);
         // Do the same for all extra sensor entities
@@ -278,10 +311,48 @@ var HassExtension = GObject.registerClass ({
         }
     }
 
+    /**
+     * 
+     * @return {Array} An array of objects with keys: 'entity_id' and 'name' to be used when rebuilding the tray entries.
+     */
+    _getSceneEntities() {
+        // Initialize the switched if this is the first time the function is being called
+        if (this.allScenes === undefined) {
+            this.allScenes = Utils.discoverScenes(this.base_url);
+            this._settings.set_strv(HASS_SCENE_ENTITIES, this.allScenes.map(entry => JSON.stringify(entry)))
+        }
+        if (this.scene_ent_ids === undefined) {  // || this.scene_ent_ids.length === 0) {
+            // If the togglable entities provided by the user are empty then simply use all of the available entities
+            // and also update the settings
+            this._settings.set_strv(HASS_ENABLED_SCENES_ENTITIES, this.allScenes.map(entry => entry.entity_id))
+            return this.allScenes
+        } else {
+            let output = [];
+            // Only return the entities that appear in the user defined entities
+            for (let scene of this.allScenes) {
+                if (this.scene_ent_ids.includes(scene.entity_id)) {
+                    output.push(scene);
+                }
+            }
+            this._settings.set_strv(HASS_ENABLED_SCENES_ENTITIES, output.map(entry => entry.entity_id));
+            return output
+        }
+    }
+
     _toggleEntity(entityId) {
         let data = { "entity_id": entityId };
         let domain = entityId.split(".")[0];  // e.g. light.mylight => light
         let result = Utils.send_request(`${this.base_url}api/services/${domain}/toggle`, 'POST', data);
+        if (!result) {
+            return false;
+        }
+        return true;
+    }
+
+    _activateScene(entityId) {
+        let data = { "entity_id": entityId };
+        let domain = entityId.split(".")[0];  // e.g. scene.myscene => scene
+        let result = Utils.send_request(`${this.base_url}api/services/${domain}/turn_on`, 'POST', data);
         if (!result) {
             return false;
         }

@@ -140,6 +140,34 @@ function discoverSensors(base_url) {
 }
 
 /**
+ * 
+ * @param {String} base_url The base url of the Home Assistant instance
+ * @return {Object} Array of dictionaries with 'entity_id' and 'name' entries
+ */
+function discoverScenes(base_url) {
+    if ( !base_url || base_url === "http:///" || base_url === "https:///" ) {
+        return [];
+    }
+    let url = `${base_url}api/states`
+    let data = send_request(url, 'GET');
+    if (data === false) {
+        return [];
+    }
+    let entities = [];
+    for (let ent of data) {
+        if (ent.entity_id.startsWith('scene.')) {
+            entities.push(
+              {
+                'entity_id': ent.entity_id,
+                'name': ent.attributes.friendly_name,
+              }
+            )
+        }
+    }
+    return entities
+}
+
+/**
  * Check equality of elements of two arrays
  * @param {Array} a Array 1
  * @param {Array} b Array 2
